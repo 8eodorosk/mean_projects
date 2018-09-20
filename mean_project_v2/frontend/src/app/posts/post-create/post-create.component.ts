@@ -21,13 +21,13 @@ export class PostCreateComponent{
 			return;
 		}
 
-		// const post: Post = {
-		// 	title : form.value.title,
-		// 	content: form.value.content
-		// };
-
 		this.postsService.addPost(form.value.title,form.value.content);
 		form.resetForm();
 		
 	}
 }
+
+
+// 4Negh94r5MGXZf9X
+// II__dominus__II
+// 195.251.23.46
