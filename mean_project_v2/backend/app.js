@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 
 const postsRoutes = require("./routes/posts");
 
-mongoose.connect("mongodb+srv://II__dominus__II:4Negh94r5MGXZf9X@cluster0-lgx3p.mongodb.net/node-angular?retryWrites=true", { useNewUrlParser: true })
+mongoose.connect("mongodb+srv://<your credentials here>@cluster0-lgx3p.mongodb.net/node-angular?retryWrites=true", { useNewUrlParser: true })
 	.then(()=>{
 		console.log('Connected to database');
 	})
@@ -39,6 +39,3 @@ app.use("/api/posts", postsRoutes);
 module.exports = app;
 
 
-// 4Negh94r5MGXZf9X
-// II__dominus__II
-// 195.251.23.46
