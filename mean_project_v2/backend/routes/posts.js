@@ -23,8 +23,10 @@ const storage = multer.diskStorage({
 		cb(error, "images");
 	},
 	filename: (req, file, cb) => {
+		//console.log(file);
 		const name = file.originalname.toLowerCase().split(' ').join('-');
 		const ext = MIME_TYPE_MAP[file.mimetype]; 
+		//console.log(name, ext);
 		cb(null, name + '-' + Date.now() + '.' + ext);
 	}
 })
@@ -37,9 +39,11 @@ const storage = multer.diskStorage({
 router.post("", multer({storage: storage}).single("image") ,(req, res, next) =>{
 	//const post = req.body;
 	
+	const url = req.protocol + '://' + req.get("host");
 	const post = new Post({
 		title: req.body.title,
-		content: req.body.content
+		content: req.body.content,
+		imagePath: url + '/images/' + req.file.filename
 	});
 
 	// console.log(post);
@@ -47,7 +51,13 @@ router.post("", multer({storage: storage}).single("image") ,(req, res, next) =>{
 		.then(createdPost => {
 			res.status(201).json({
 				message: 'Post added successfully',
-				postId: createdPost._id
+				post: {
+					//...createdPost, // create a post with all the properties of createdPost then override this with the below
+					id: createdPost._id,
+					title: createdPost.title,
+					content: createdPost.content,
+					imagePath: createdPost.imagePath
+				}
 			});
 		});
 	
@@ -55,13 +65,35 @@ router.post("", multer({storage: storage}).single("image") ,(req, res, next) =>{
 
 router.get("", (req, res, next) => {
 
-	Post.find()
-		.then(documents =>{
-			res.status(200).json({
-				message:'Posts fetched successfully',
-				posts: documents
-			});
+	// req.query pairneis ta dedomena poy einai se morfi query string!!	
+	const pageSize = +req.query.pagesize; // to + mprosta einai gia na metatrepsei to string se arithmo
+										  // ayto giati apo to url pairnei tis times se morfi string 
+	const currentPage = +req.query.page;
+	const postQuery = Post.find(); // it will be executed as soon as we call then!!!! 
+								   // ayto einai gia na kanoyme dynamic queries....!!
+	let fetchedPosts;					
+								   
+	if (pageSize && currentPage) {
+		postQuery
+			.skip(pageSize * (currentPage -1))
+			.limit(pageSize);  // ayto gia na ferei osa documents thekoyme sti sigkekrimeni periptwsi pageSize
+
+
+		// https://stackoverflow.com/questions/5539955/how-to-paginate-with-mongoose-in-node-js
+		// ayto to skip einai poly CPU costly!!!! 
+		// READ MONGOOSE DOCUMENTATION WELL!!!
+	}
+	postQuery.then(documents =>{
+		fetchedPosts = documents;
+		return Post.countDocuments();
+	})
+	.then( count =>{
+		res.status(200).json({
+			message:'Posts fetched successfully',
+			posts: fetchedPosts,
+			maxPosts: count 
 		});
+	});
 
 	// SMANTIKO prepei na einai mesa sto then giati perimenoyme na erthoun kai meta prpeie na ta steiloume ama ta 
 	// xrhsimopoihsoume edw tha prin ferei tha prospathisei na ta steilei xwris na exei tipota
@@ -82,14 +114,26 @@ router.get("/:id", (req, res, next)=>{
 	})
 });
 
-router.put("/:id", (req, res, next) =>{
+router.put("/:id", multer({storage: storage}).single("image"), (req, res, next) =>{
+	
+
+	let imagePath = req.body.imagePath;
+
+	if (req.file) {
+		const url = req.protocol + '://' + req.get("host");
+		imagePath = url + '/images/' + req.file.filename;
+	}
+
+
 	const post = new Post({
 		_id: req.body.id,
 		title: req.body.title,
-		content: req.body.content
+		content: req.body.content,
+		imagePath: imagePath
 	});
+	console.log("lalalalalala",post);
 	Post.updateOne({_id: req.params.id}, post).then(result =>{
-		console.log(result);
+		//console.log(result);
 		res.status(200).json({message: "Update succesfull"});
 	});
 });
